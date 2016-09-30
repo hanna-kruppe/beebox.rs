@@ -174,15 +174,23 @@ impl Aabb {
         if tmin > tymax || tymin > tmax {
             return false;
         }
-        tmin = tmin.min(tymin);
-        tmax = tmax.max(tymax);
+        if tymin > tmin {
+            tmin = tymin;
+        }
+        if tymax < tmax {
+            tmax = tymax;
+        }
         let tzmin = (p[sgn2].z - r.org.z) * r.inv_dir.z;
         let tzmax = (p[1 - sgn2].z - r.org.z) * r.inv_dir.z;
         if tmin > tzmax || tzmin > tmax {
             return false;
         }
-        tmin = tmin.min(tzmin);
-        tmax = tmax.max(tzmax);
+        if tzmin > tmin {
+            tmin = tzmin;
+        }
+        if tzmax < tmax {
+            tmax = tzmax;
+        }
         tmin < t1 && tmax > t0
     }
 
@@ -342,7 +350,7 @@ mod tests {
     fn intersects_outside() {
         let bb = Aabb::from_corners(vec3(-1.0, -2.0, -3.0), vec3(3.0, 2.0, 1.0));
         let ray = RayData::new(vec3(9.0, 9.0, 9.0), vec3(-0.33, -0.33, -0.33));
-        assert!(bb.intersects(&ray, 0.0, 20.0));
+        assert!(bb.intersects(&ray, 0.0, 25.0));
     }
 
     #[test]
@@ -356,14 +364,20 @@ mod tests {
     fn intersects_respects_t1() {
         let bb = Aabb::from_corners(vec3(-1.0, -2.0, -3.0), vec3(3.0, 2.0, 1.0));
         let ray = RayData::new(vec3(9.0, 9.0, 9.0), vec3(-0.33, -0.33, -0.33));
-        assert!(!bb.intersects(&ray, 0.0, 10.0));
+        assert!(!bb.intersects(&ray, 0.0, 24.0));
     }
 
     #[test]
-    fn intersects_miss() {
-        let bb = Aabb::from_corners(vec3(-1.0, -2.0, -3.0), vec3(3.0, 2.0, 1.0));
-        let ray = RayData::new(vec3(9.0, 9.0, 9.0), vec3(0.0, -0.33, -0.33));
-        assert!(!bb.intersects(&ray, 0.0, 20.0));
+    fn intersects_miss_in_one_dimension() {
+        // The ray "hits" in the x and z dimensions but not in the y dimension.
+        // If one inadvertedly takes the *union* of the slab intersection intervals, as an
+        // early version of a certain crate did, this would (incorrectly) be considered a hit.
+        // (The numbers are ugly because they're taken from a real ray tracer.)
+        let bb = Aabb::from_corners(vec3(-1.5569899, -1.543336, -8.447131),
+                                    vec3(1.5569899, 1.5433359, -6.033665));
+        let r = RayData::new(vec3(0.0, 0.0, 0.0),
+                             vec3(-0.17893936, 0.6952105, -0.6961774));
+        assert!(!bb.intersects(&r, 0.0, f32::INFINITY));
     }
 
     #[test]
