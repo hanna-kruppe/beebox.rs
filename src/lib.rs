@@ -9,7 +9,7 @@
 //! It is also focused entirely on 32-bit floats.
 //! A 64-bit variant may be added in later versions if needed.
 
-extern crate cgmath;
+pub extern crate cgmath;
 
 use std::f32;
 use cgmath::{Vector3, vec3};
